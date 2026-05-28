@@ -149,7 +149,7 @@ class Game {
             }
         };
 
-        this.network.channel.on('broadcast', { event: 'playerTransform' }, ({ payload }) => {
+        if(this.network.channel) this.network.channel.on('broadcast', { event: 'playerTransform' }, ({ payload }) => {
             if (payload.id !== this.localPlayerId && this.players[payload.id]) {
                 this.players[payload.id].setState(payload);
             }
