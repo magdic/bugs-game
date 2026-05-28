@@ -1,32 +1,42 @@
 export default class Player {
-    constructor(id, x, y, team) {
+    constructor(id, name, gender, team) {
         this.id = id;
-        this.x = x;
-        this.y = y;
+        this.name = name;
+        this.gender = gender;
         this.team = team;
-        this.carryingCount = 0;
-        this.speed = 5;
-        this.radius = 15;
+
+        // 3D coordinates
+        this.x = team === 'red' ? -50 : 50;
+        this.y = 0;
+        this.z = 0;
+
+        this.speed = 1.0;
+        this.radius = 4; // Collision radius roughly matching the funko body
     }
 
-    updatePosition(keys, canvasWidth, canvasHeight) {
+    updatePosition(keys, boundsX, boundsZ) {
         let dx = 0;
-        let dy = 0;
+        let dz = 0;
 
-        if (keys['ArrowUp'] || keys['w']) dy -= this.speed;
-        if (keys['ArrowDown'] || keys['s']) dy += this.speed;
+        if (keys['ArrowUp'] || keys['w']) dz -= this.speed;
+        if (keys['ArrowDown'] || keys['s']) dz += this.speed;
         if (keys['ArrowLeft'] || keys['a']) dx -= this.speed;
         if (keys['ArrowRight'] || keys['d']) dx += this.speed;
 
-        // Diagonal normalization could go here, but omitted for simplicity
+        // Diagonal normalization
+        if (dx !== 0 && dz !== 0) {
+            const length = Math.sqrt(dx * dx + dz * dz);
+            dx = (dx / length) * this.speed;
+            dz = (dz / length) * this.speed;
+        }
 
-        if (dx !== 0 || dy !== 0) {
+        if (dx !== 0 || dz !== 0) {
             this.x += dx;
-            this.y += dy;
+            this.z += dz;
 
-            // Boundaries
-            this.x = Math.max(this.radius, Math.min(canvasWidth - this.radius, this.x));
-            this.y = Math.max(this.radius, Math.min(canvasHeight - this.radius, this.y));
+            // Boundaries (Half pitch is boundsX, boundsZ)
+            this.x = Math.max(-boundsX + this.radius, Math.min(boundsX - this.radius, this.x));
+            this.z = Math.max(-boundsZ + this.radius, Math.min(boundsZ - this.radius, this.z));
 
             return true; // Moved
         }
@@ -35,20 +45,18 @@ export default class Player {
 
     getState() {
         return {
-            x: this.x,
-            y: this.y,
+            id: this.id,
+            name: this.name,
+            gender: this.gender,
             team: this.team,
-            carryingCount: this.carryingCount
+            x: this.x,
+            z: this.z
         };
     }
 
     setState(state) {
-        // Typically we only update what the server says if we aren't doing strict client prediction
-        // For a simple version, we might just update carryingCount or force sync position
-        this.carryingCount = state.carryingCount !== undefined ? state.carryingCount : this.carryingCount;
-
-        // In a real game with prediction, you'd handle position sync carefully here
-        // this.x = state.x;
-        // this.y = state.y;
+        this.team = state.team;
+        this.x = state.x;
+        this.z = state.z;
     }
 }

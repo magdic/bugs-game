@@ -1,72 +1,97 @@
+import { createClient } from '@supabase/supabase-js';
+
 export default class Network {
     constructor() {
-        // Initialize Firebase
-        // Replace with your actual Firebase config
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+        // Initialize Supabase Client
+        const supabaseUrl = 'https://ghlxgnablomhqaxomyqx.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdobHhnbmFibG9taHFheG9teXF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MzYxMDYsImV4cCI6MjA5NTUxMjEwNn0.LHJ5tha0RNBjeGiFWFgS91hvHb0qjGz4CxEyg6gEPPY'; // Using the anon key obtained earlier
 
-        if (!window.firebase.apps.length) {
-            window.firebase.initializeApp(firebaseConfig);
-        }
+        this.supabase = createClient(supabaseUrl, supabaseKey);
 
-        this.db = window.firebase.database();
+        // Single room for this simple setup
+        this.roomName = 'soccer_room_1';
+        this.channel = this.supabase.channel(this.roomName, {
+            config: {
+                presence: {
+                    key: 'player', // Optional, defaults to user ID if auth'd, but we are using anon
+                },
+            },
+        });
 
         this.callbacks = {
+            onPresenceSync: null,
             onGameStateUpdate: null,
-            onPlayersUpdate: null,
-            onBugsUpdate: null
+            onPlayerAction: null, // e.g. for shooting/passing events
         };
+
+        this.localPlayerMetadata = null;
     }
 
-    initListeners() {
-        // Listen to Game State (scores, time)
-        this.db.ref('gameState').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data && this.callbacks.onGameStateUpdate) {
-                this.callbacks.onGameStateUpdate(data);
-            }
+    joinRoom(playerData) {
+        this.localPlayerMetadata = playerData;
+
+        this.channel
+            .on('presence', { event: 'sync' }, () => {
+                const newState = this.channel.presenceState();
+                if (this.callbacks.onPresenceSync) {
+                    this.callbacks.onPresenceSync(newState);
+                }
+            })
+            .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+                console.log('join', key, newPresences)
+            })
+            .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+                 console.log('leave', key, leftPresences)
+            })
+            .on('broadcast', { event: 'gameState' }, ({ payload }) => {
+                if (this.callbacks.onGameStateUpdate) {
+                    this.callbacks.onGameStateUpdate(payload);
+                }
+            })
+            .on('broadcast', { event: 'playerAction' }, ({ payload }) => {
+                if (this.callbacks.onPlayerAction) {
+                    this.callbacks.onPlayerAction(payload);
+                }
+            })
+            .subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    // Track our presence once subscribed
+                    const presenceTrackStatus = await this.channel.track(this.localPlayerMetadata);
+                    console.log('Presence track status:', presenceTrackStatus);
+                }
+            });
+    }
+
+    leaveRoom() {
+        this.channel.untrack();
+        this.supabase.removeChannel(this.channel);
+    }
+
+    // Host updates the overall game state (ball position, score, time)
+    broadcastGameState(state) {
+        this.channel.send({
+            type: 'broadcast',
+            event: 'gameState',
+            payload: state
         });
+    }
 
-        // Listen to Players
-        this.db.ref('players').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data && this.callbacks.onPlayersUpdate) {
-                this.callbacks.onPlayersUpdate(data);
-            }
-        });
-
-        // Listen to Bugs
-        this.db.ref('bugs').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data && this.callbacks.onBugsUpdate) {
-                this.callbacks.onBugsUpdate(data);
-            }
+    // Any player broadcasts an action (shoot, pass)
+    broadcastAction(action) {
+         this.channel.send({
+            type: 'broadcast',
+            event: 'playerAction',
+            payload: action
         });
     }
 
-    updatePlayerState(playerId, state) {
-        this.db.ref(`players/${playerId}`).set(state);
+    // Broadcast player transform (position, rotation)
+    // Often you want a dedicated high-frequency channel or event for this
+    broadcastPlayerTransform(transform) {
+         this.channel.send({
+            type: 'broadcast',
+            event: 'playerTransform', // Separate event
+            payload: transform
+        });
     }
-
-    removePlayer(playerId) {
-        this.db.ref(`players/${playerId}`).remove();
-    }
-
-    removeBug(bugId) {
-        this.db.ref(`bugs/${bugId}`).remove();
-    }
-
-    updateScore(team, score) {
-         this.db.ref(`gameState/${team}Score`).set(score);
-    }
-
-    // Additional methods for combat, bug dropping, etc., would go here
-    // In a fully authoritative setup, some of these actions might be handled via Cloud Functions
 }
