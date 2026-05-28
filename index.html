@@ -43,6 +43,15 @@
             gap: 15px;
         }
 
+        #room-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+            border-top: 1px solid #555;
+            padding-top: 15px;
+        }
+
         #stadium-selection {
             display: none; /* Hidden until host */
         }
@@ -112,9 +121,18 @@
                     <option value="woman">Woman</option>
                 </select>
             </div>
-            <button id="joinBtn">Join Lobby</button>
+
+            <div id="room-controls">
+                <button id="createGameBtn">Create New Game</button>
+                <p>OR</p>
+                <div>
+                    <input type="text" id="roomCodeInput" placeholder="Enter Room Code">
+                    <button id="joinGameBtn">Join Game</button>
+                </div>
+            </div>
 
             <div id="lobbyStatus" class="hidden">
+                <h2>Room Code: <span id="displayRoomCode"></span></h2>
                 <p>Players connected: <span id="playerCount">0</span>/4 (Minimum)</p>
                 <p id="waitingMessage">Waiting for more players...</p>
                 <ul id="playerList" style="list-style: none; padding: 0;"></ul>

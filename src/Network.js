@@ -2,33 +2,34 @@ import { createClient } from '@supabase/supabase-js';
 
 export default class Network {
     constructor() {
-        // Initialize Supabase Client
         const supabaseUrl = 'https://ghlxgnablomhqaxomyqx.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdobHhnbmFibG9taHFheG9teXF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MzYxMDYsImV4cCI6MjA5NTUxMjEwNn0.LHJ5tha0RNBjeGiFWFgS91hvHb0qjGz4CxEyg6gEPPY'; // Using the anon key obtained earlier
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdobHhnbmFibG9taHFheG9teXF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MzYxMDYsImV4cCI6MjA5NTUxMjEwNn0.LHJ5tha0RNBjeGiFWFgS91hvHb0qjGz4CxEyg6gEPPY';
 
         this.supabase = createClient(supabaseUrl, supabaseKey);
 
-        // Single room for this simple setup
-        this.roomName = 'soccer_room_1';
-        this.channel = this.supabase.channel(this.roomName, {
-            config: {
-                presence: {
-                    key: 'player', // Optional, defaults to user ID if auth'd, but we are using anon
-                },
-            },
-        });
+        this.roomName = null;
+        this.channel = null;
 
         this.callbacks = {
             onPresenceSync: null,
             onGameStateUpdate: null,
-            onPlayerAction: null, // e.g. for shooting/passing events
+            onPlayerAction: null,
         };
 
         this.localPlayerMetadata = null;
     }
 
-    joinRoom(playerData) {
+    joinRoom(roomCode, playerData) {
+        this.roomName = `soccer_room_${roomCode}`;
         this.localPlayerMetadata = playerData;
+
+        this.channel = this.supabase.channel(this.roomName, {
+            config: {
+                presence: {
+                    key: 'player',
+                },
+            },
+        });
 
         this.channel
             .on('presence', { event: 'sync' }, () => {
@@ -55,7 +56,6 @@ export default class Network {
             })
             .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
-                    // Track our presence once subscribed
                     const presenceTrackStatus = await this.channel.track(this.localPlayerMetadata);
                     console.log('Presence track status:', presenceTrackStatus);
                 }
@@ -63,12 +63,14 @@ export default class Network {
     }
 
     leaveRoom() {
-        this.channel.untrack();
-        this.supabase.removeChannel(this.channel);
+        if (this.channel) {
+            this.channel.untrack();
+            this.supabase.removeChannel(this.channel);
+        }
     }
 
-    // Host updates the overall game state (ball position, score, time)
     broadcastGameState(state) {
+        if (!this.channel) return;
         this.channel.send({
             type: 'broadcast',
             event: 'gameState',
@@ -76,8 +78,8 @@ export default class Network {
         });
     }
 
-    // Any player broadcasts an action (shoot, pass)
     broadcastAction(action) {
+         if (!this.channel) return;
          this.channel.send({
             type: 'broadcast',
             event: 'playerAction',
@@ -85,12 +87,11 @@ export default class Network {
         });
     }
 
-    // Broadcast player transform (position, rotation)
-    // Often you want a dedicated high-frequency channel or event for this
     broadcastPlayerTransform(transform) {
+         if (!this.channel) return;
          this.channel.send({
             type: 'broadcast',
-            event: 'playerTransform', // Separate event
+            event: 'playerTransform',
             payload: transform
         });
     }

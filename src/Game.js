@@ -16,6 +16,7 @@ class Game {
 
         this.players = {};
         this.isHost = false;
+        this.roomCode = null;
 
         this.gameState = {
             status: 'lobby',
@@ -27,10 +28,9 @@ class Game {
         };
 
         this.keys = {};
-        this.lastActionTime = 0; // Throttle kicks
+        this.lastActionTime = 0;
         this.lastTime = performance.now();
 
-        // Dimensions
         this.boundsX = 100;
         this.boundsZ = 60;
 
@@ -43,8 +43,10 @@ class Game {
         this.stadiumPanel = document.getElementById('stadium-selection');
         this.gameUI = document.getElementById('game-ui');
         this.postMatchPanel = document.getElementById('post-match-ui');
+        this.roomControls = document.getElementById('room-controls');
 
-        document.getElementById('joinBtn').addEventListener('click', () => this.joinLobby());
+        document.getElementById('createGameBtn').addEventListener('click', () => this.createGame());
+        document.getElementById('joinGameBtn').addEventListener('click', () => this.joinGame());
         document.getElementById('startMatchBtn').addEventListener('click', () => this.startMatch());
         document.getElementById('rematchBtn').addEventListener('click', () => this.restartMatch(false));
         document.getElementById('swapTeamsBtn').addEventListener('click', () => this.restartMatch(true));
@@ -62,32 +64,28 @@ class Game {
         if (this.gameState.status !== 'playing') return;
 
         const now = performance.now();
-        if (now - this.lastActionTime < 500) return; // 500ms cooldown
+        if (now - this.lastActionTime < 500) return;
 
-        // Distance check
         const dx = this.ball.x - this.localPlayer.x;
         const dz = this.ball.z - this.localPlayer.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
 
-        // Kick range
         if (dist < this.localPlayer.radius + this.ball.radius + 5) {
             let kickForce = 0;
             let actionType = '';
 
-            if (code === 'Space') { // Pass
+            if (code === 'Space') {
                 kickForce = 3;
                 actionType = 'pass';
-            } else if (code === 'Enter') { // Shoot
+            } else if (code === 'Enter') {
                 kickForce = 6;
                 actionType = 'shoot';
             }
 
             if (kickForce > 0) {
-                // Normalize direction, add slight player velocity influence
                 const dirX = dx / dist;
                 const dirZ = dz / dist;
 
-                // Broadcast intent to kick. Host will apply physics, but we can predict.
                 this.network.broadcastAction({
                     type: actionType,
                     playerId: this.localPlayerId,
@@ -101,7 +99,22 @@ class Game {
         }
     }
 
-    joinLobby() {
+    createGame() {
+        this.roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        this.joinRoom();
+    }
+
+    joinGame() {
+        const inputCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+        if (!inputCode) {
+            alert('Please enter a valid room code.');
+            return;
+        }
+        this.roomCode = inputCode;
+        this.joinRoom();
+    }
+
+    joinRoom() {
         const nameInput = document.getElementById('playerName').value || 'Player';
         const genderInput = document.getElementById('playerGender').value;
         const team = Math.random() > 0.5 ? 'red' : 'blue';
@@ -109,15 +122,15 @@ class Game {
         this.localPlayer = new Player(this.localPlayerId, nameInput, genderInput, team);
         this.players[this.localPlayerId] = this.localPlayer;
 
-        document.getElementById('joinBtn').classList.add('hidden');
         document.getElementById('playerName').disabled = true;
         document.getElementById('playerGender').disabled = true;
+        this.roomControls.classList.add('hidden');
         document.getElementById('lobbyStatus').classList.remove('hidden');
+        document.getElementById('displayRoomCode').innerText = this.roomCode;
 
         this.setupNetwork();
-        this.network.joinRoom(this.localPlayer.getState());
+        this.network.joinRoom(this.roomCode, this.localPlayer.getState());
 
-        // Initialize audio context on user interaction
         this.audio.init();
     }
 
@@ -127,11 +140,9 @@ class Game {
             if (!this.isHost) this.syncGameState(state);
         };
         this.network.callbacks.onPlayerAction = (action) => {
-            // Play sounds for everyone
             if (action.type === 'shoot') this.audio.playShoot();
             if (action.type === 'pass') this.audio.playPass();
 
-            // Host applies the force
             if (this.isHost && this.ball) {
                 this.ball.vx += action.dirX * action.force;
                 this.ball.vz += action.dirZ * action.force;
@@ -147,6 +158,9 @@ class Game {
 
     handlePresenceUpdate(presenceState) {
         let sortedIds = Object.keys(presenceState).sort();
+
+        // Host logic based on alphabetical ID if multiple people join at exact same time,
+        // usually the creator is first because they created the channel.
         this.isHost = (sortedIds[0] === this.localPlayerId);
 
         const listDOM = document.getElementById('playerList');
@@ -216,13 +230,11 @@ class Game {
         this.gameState = state.gameState;
 
         if (this.ball && state.ball) {
-            // Hard sync ball if it drifts too much, or lerp
             const dx = this.ball.x - state.ball.x;
             const dz = this.ball.z - state.ball.z;
-            if (dx*dx + dz*dz > 25) { // 5 units off
+            if (dx*dx + dz*dz > 25) {
                 this.ball.setState(state.ball);
             } else {
-                // Keep local velocities for smooth prediction, update position slightly
                 this.ball.x = state.ball.x;
                 this.ball.z = state.ball.z;
             }
@@ -232,8 +244,6 @@ class Game {
         else if (this.gameState.status === 'finished') this.showPostMatch();
 
         this.updateScoreboard();
-
-        // Handle goal sound trigger from state change if needed (omitted for brevity, host plays it)
     }
 
     getSyncState() {
@@ -251,7 +261,7 @@ class Game {
         this.gameUI.style.display = 'flex';
 
         if (!this.renderer) {
-            this.renderer = new Renderer('canvas-container');
+            this.renderer = new Renderer('canvas-container'); // Pass ID instead of element
             this.ball = new Ball(this.renderer.scene);
         }
 
@@ -338,7 +348,6 @@ class Game {
     }
 
     handleInteractions(delta) {
-        // 1. Player-Ball Collision (Pushing)
         for (let id in this.players) {
             const p = this.players[id];
             const dx = this.ball.x - p.x;
@@ -347,7 +356,6 @@ class Game {
             const minDist = this.ball.radius + p.radius;
 
             if (dist < minDist) {
-                // Resolve overlap
                 const overlap = minDist - dist;
                 const dirX = dx / dist;
                 const dirZ = dz / dist;
@@ -355,29 +363,22 @@ class Game {
                 this.ball.x += dirX * overlap;
                 this.ball.z += dirZ * overlap;
 
-                // Add velocity based on player movement
                 this.ball.vx += dirX * 0.5;
                 this.ball.vz += dirZ * 0.5;
             }
         }
 
-        // Update physics
         this.ball.updatePhysics(this.boundsX, this.boundsZ, delta);
 
-        // 2. Goal Detection
-        // Goal area roughly x: > 95 or < -95, z: between -15 and 15
         if (Math.abs(this.ball.x) > this.boundsX - 5 && Math.abs(this.ball.z) < 15) {
-
             if (this.ball.x > 0) {
-                // Blue goal -> Red scores
                 this.gameState.redScore++;
             } else {
-                // Red goal -> Blue scores
                 this.gameState.blueScore++;
             }
 
             this.audio.playGoal();
-            this.resetPositions(); // Reset after goal
+            this.resetPositions();
             this.network.broadcastGameState(this.getSyncState());
         }
     }
@@ -416,7 +417,6 @@ class Game {
 
                 this.updateScoreboard();
             } else if (this.ball) {
-                // Client prediction
                 this.ball.updatePhysics(this.boundsX, this.boundsZ, delta);
             }
 
