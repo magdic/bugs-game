@@ -27,7 +27,7 @@ export default class Network {
         this.channel = this.supabase.channel(this.roomName, {
             config: {
                 presence: {
-                    key: 'player',
+                    key: playerData.id, // Dynamically use the player ID so each player is distinct
                 },
             },
         });
