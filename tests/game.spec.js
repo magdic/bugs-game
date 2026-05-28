@@ -4,11 +4,27 @@ test('game lobby creates and joins successfully with room code', async ({ browse
   const context = await browser.newContext();
   const page = await context.newPage();
 
+  const errors = [];
+  page.on('pageerror', exception => {
+    errors.push(exception.message);
+  });
+  page.on('console', msg => {
+    if (msg.type() === 'error') {
+      errors.push(msg.text());
+    }
+  });
+
   await page.goto('/');
 
   // Host creates game
   await page.fill('#playerName', 'HostPlayer');
   await page.click('#createGameBtn');
+
+  // Verify no unexpected errors occurred during button click
+  if(errors.length > 0) {
+      console.log('Found unexpected errors: ', errors);
+  }
+  expect(errors.length).toBe(0);
 
   await expect(page.locator('#lobbyStatus')).not.toHaveClass(/hidden/, { timeout: 10000 });
 

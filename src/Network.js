@@ -14,6 +14,7 @@ export default class Network {
             onPresenceSync: null,
             onGameStateUpdate: null,
             onPlayerAction: null,
+            onPlayerTransform: null,
         };
 
         this.localPlayerMetadata = null;
@@ -52,6 +53,11 @@ export default class Network {
             .on('broadcast', { event: 'playerAction' }, ({ payload }) => {
                 if (this.callbacks.onPlayerAction) {
                     this.callbacks.onPlayerAction(payload);
+                }
+            })
+            .on('broadcast', { event: 'playerTransform' }, ({ payload }) => {
+                if (this.callbacks.onPlayerTransform) {
+                    this.callbacks.onPlayerTransform(payload);
                 }
             })
             .subscribe(async (status) => {
