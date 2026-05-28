@@ -2,5 +2,9 @@
   "devDependencies": {
     "@playwright/test": "^1.60.0",
     "playwright": "^1.60.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.106.2",
+    "node-fetch": "^3.3.2"
   }
 }

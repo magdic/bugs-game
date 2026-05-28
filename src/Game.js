@@ -161,7 +161,7 @@ class Game {
 
         // Host logic based on alphabetical ID if multiple people join at exact same time,
         // usually the creator is first because they created the channel.
-        this.isHost = (sortedIds[0] === this.localPlayerId);
+        this.isHost = (sortedIds.length > 0 && sortedIds[0] === this.localPlayerId);
 
         const listDOM = document.getElementById('playerList');
         listDOM.innerHTML = '';
