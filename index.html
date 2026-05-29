@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Great Bugs Heist</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <button id="theme-toggle" class="icon-btn"><i data-lucide="moon"></i></button>
+    <div id="timer" class="timer" style="display: none;"></div>
+
+    <div id="app">
+        <!-- Screen: Home -->
+        <div id="screen-home" class="screen">
+            <h1>The Great Bugs Heist</h1>
+            <div class="card">
+                <input type="text" id="input-name" placeholder="Enter your name">
+                <div class="flex-row">
+                    <input type="color" id="input-color" value="#ff5722">
+                    <select id="select-avatar">
+                        <option value="user">User</option>
+                        <option value="bug">Bug</option>
+                        <option value="cat">Cat</option>
+                        <option value="dog">Dog</option>
+                        <option value="ghost">Ghost</option>
+                    </select>
+                </div>
+                <div class="flex-row">
+                    <button id="btn-create-room">Create Room</button>
+                    <button id="btn-join-room" class="secondary">Join Room</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen: Lobby -->
+        <div id="screen-lobby" class="screen" style="display: none;">
+            <h2>Room Code: <span id="room-code-display"></span></h2>
+            <div class="card">
+                <h3>Players</h3>
+                <ul id="lobby-players-list" class="player-list"></ul>
+                <button id="btn-start-game" style="display: none;">Start Game</button>
+            </div>
+        </div>
+
+        <!-- Screen: Decorating -->
+        <div id="screen-decorating" class="screen screen-wide" style="display: none;">
+            <div class="editor-container">
+                <div class="assets-panel">
+                    <h3>Desks</h3>
+                    <div id="desks-list" class="assets-list"></div>
+                    <h3>Items (Max 7)</h3>
+                    <div id="items-list" class="assets-list"></div>
+                </div>
+                <div class="canvas-panel">
+                    <canvas id="desk-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen: Guessing -->
+        <div id="screen-guessing" class="screen" style="display: none;">
+            <h2>Whose desk is this?</h2>
+            <div class="card">
+                <img id="guessing-image" src="" alt="Guess the player" class="guess-img">
+                <div id="guessing-players-list" class="guess-buttons"></div>
+            </div>
+        </div>
+
+        <!-- Screen: Replicating -->
+        <div id="screen-replicating" class="screen screen-wide" style="display: none;">
+            <h2 id="replicating-target"></h2>
+            <div class="editor-container">
+                <div class="assets-panel">
+                    <!-- Assets will be duplicated or we can use the same panel structure by just moving the canvas. For simplicity, we just use the same logic and the items should be globally available or we just let UIManager handle it. -->
+                </div>
+                <div class="canvas-panel" id="replicating-canvas-container">
+                    <!-- Canvas moves here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen: Results -->
+        <div id="screen-results" class="screen" style="display: none;">
+            <h2>Final Scores</h2>
+            <div class="card">
+                <ul id="results-list" class="player-list"></ul>
+                <button onclick="location.reload()">Play Again</button>
+            </div>
+        </div>
+
+        <!-- Screen: Waiting -->
+        <div id="screen-waiting" class="screen" style="display: none;">
+            <div class="card">
+                <h2 id="waiting-message">Waiting...</h2>
+                <div class="loader"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
