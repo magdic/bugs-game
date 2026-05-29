@@ -56,7 +56,10 @@ function init() {
             osc.start();
 
             console.log("Game started!", gameState.players);
-            engine = new GameEngine(); engine.initPlayers();
+            engine = new GameEngine();
+            engine.init().then(() => {
+                engine.initPlayers();
+            });
             playerController = new PlayerController(roomManager);
             window.playerController = playerController;
             bugController = new BugController(roomManager);

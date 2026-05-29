@@ -1,26 +1,28 @@
 import * as PIXI from 'pixi.js';
 import { gameState } from './GameState.js';
 
+
 export class GameEngine {
     constructor() {
-        this.app = new PIXI.Application({
+        this.app = new PIXI.Application();
+        this.container = new PIXI.Container();
+        this.players = {};
+        this.bugs = {};
+        this.cabin = null;
+        this.river = null;
+    }
+
+    async init() {
+        await this.app.init({
             resizeTo: window,
             backgroundColor: 0x1a2e1c, // Dark woods green
         });
-        document.getElementById('app').appendChild(this.app.view);
+        document.getElementById('app').appendChild(this.app.canvas);
 
-        this.container = new PIXI.Container();
         this.app.stage.addChild(this.container);
-
-        this.players = {};
-        this.bugs = {};
-
-        // Environment
-        this.cabin = null;
-        this.river = null;
-
         this.setupEnvironment();
     }
+
 
     setupEnvironment() {
         // Draw River (Left side)
