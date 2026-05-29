@@ -35,15 +35,16 @@ export default class Network {
         this.channel
             .on('presence', { event: 'sync' }, () => {
                 const newState = this.channel.presenceState();
+                console.log('Presence sync:', newState);
                 if (this.callbacks.onPresenceSync) {
                     this.callbacks.onPresenceSync(newState);
                 }
             })
             .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-                console.log('join', key, newPresences)
+                console.log('Player joined:', key, newPresences);
             })
             .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-                 console.log('leave', key, leftPresences)
+                 console.log('Player left:', key, leftPresences);
             })
             .on('broadcast', { event: 'gameState' }, ({ payload }) => {
                 if (this.callbacks.onGameStateUpdate) {
@@ -61,9 +62,15 @@ export default class Network {
                 }
             })
             .subscribe(async (status) => {
+                console.log('Channel subscription status:', status);
                 if (status === 'SUBSCRIBED') {
                     const presenceTrackStatus = await this.channel.track(this.localPlayerMetadata);
                     console.log('Presence track status:', presenceTrackStatus);
+
+                    // Force a sync callback immediately after tracking to guarantee the UI updates
+                    if (this.callbacks.onPresenceSync) {
+                        this.callbacks.onPresenceSync(this.channel.presenceState());
+                    }
                 }
             });
     }

@@ -58,6 +58,25 @@ class Game {
         window.addEventListener('keyup', (e) => {
             this.keys[e.code] = false;
         });
+
+        const savedName = sessionStorage.getItem('playerName');
+        if (savedName) {
+            document.getElementById('playerName').value = savedName;
+        }
+        const savedGender = sessionStorage.getItem('playerGender');
+        if (savedGender) {
+            document.getElementById('playerGender').value = savedGender;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomParam = urlParams.get('room');
+        if (roomParam) {
+            document.getElementById('roomCodeInput').value = roomParam.toUpperCase();
+            if (savedName) {
+                this.roomCode = roomParam.toUpperCase();
+                setTimeout(() => this.joinRoom(), 100);
+            }
+        }
     }
 
     handleInput(code) {
@@ -119,6 +138,13 @@ class Game {
         const genderInput = document.getElementById('playerGender').value;
         const team = Math.random() > 0.5 ? 'red' : 'blue';
 
+        sessionStorage.setItem('playerName', nameInput);
+        sessionStorage.setItem('playerGender', genderInput);
+
+        const url = new URL(window.location);
+        url.searchParams.set('room', this.roomCode);
+        window.history.pushState({}, '', url);
+
         this.localPlayer = new Player(this.localPlayerId, nameInput, genderInput, team);
         this.players[this.localPlayerId] = this.localPlayer;
 
@@ -129,7 +155,13 @@ class Game {
         document.getElementById('displayRoomCode').innerText = this.roomCode;
 
         this.setupNetwork();
-        this.network.joinRoom(this.roomCode, this.localPlayer.getState());
+        
+        // Optimistically update the UI instantly so it never hangs at 0/4
+        this.handlePresenceUpdate({});
+        
+        const pState = this.localPlayer.getState();
+        pState.joinedAt = Date.now();
+        this.network.joinRoom(this.roomCode, pState);
 
         this.audio.init();
     }
@@ -158,38 +190,57 @@ class Game {
 
     handlePresenceUpdate(presenceState) {
         let sortedIds = Object.keys(presenceState).sort();
+        let allPlayersData = [];
 
-        // Host logic based on alphabetical ID if multiple people join at exact same time,
-        // usually the creator is first because they created the channel.
-        this.isHost = (sortedIds.length > 0 && sortedIds[0] === this.localPlayerId);
-
-        const listDOM = document.getElementById('playerList');
-        listDOM.innerHTML = '';
-        let newPlayersDict = {};
+        // Optimistically keep track of the local player even if presence echo is delayed
+        let newPlayersDict = { [this.localPlayerId]: true };
 
         sortedIds.forEach((key, index) => {
             const presenceData = presenceState[key][0];
             if (presenceData) {
+                allPlayersData.push(presenceData);
                 newPlayersDict[presenceData.id] = true;
                 if (!this.players[presenceData.id]) {
                     this.players[presenceData.id] = new Player(
                         presenceData.id, presenceData.name, presenceData.gender, presenceData.team
                     );
                 }
-                if (this.isHost && this.gameState.status === 'lobby') {
-                     this.players[presenceData.id].team = index % 2 === 0 ? 'red' : 'blue';
-                }
-
-                const li = document.createElement('li');
-                li.innerText = `${presenceData.name} (${this.players[presenceData.id].team})`;
-                listDOM.appendChild(li);
             }
         });
+
+        // Determine host by join time to prevent host migration on random ID checks
+        if (allPlayersData.length > 0) {
+            allPlayersData.sort((a, b) => {
+                const timeA = a.joinedAt || 0;
+                const timeB = b.joinedAt || 0;
+                if (timeA !== timeB) return timeA - timeB;
+                return a.id.localeCompare(b.id);
+            });
+            this.isHost = (allPlayersData[0].id === this.localPlayerId);
+        } else {
+            this.isHost = true;
+        }
+
+        allPlayersData.forEach((presenceData, index) => {
+            if (this.isHost && this.gameState.status === 'lobby') {
+                 this.players[presenceData.id].team = index % 2 === 0 ? 'red' : 'blue';
+            }
+        });
+
+        const listDOM = document.getElementById('playerList');
+        listDOM.innerHTML = '';
 
         for (let id in this.players) {
             if (!newPlayersDict[id] && id !== this.localPlayerId) {
                 if (this.renderer) this.renderer.removePlayerMesh(id);
                 delete this.players[id];
+            } else if (this.players[id]) {
+                // Render the player in the list
+                const p = this.players[id];
+                const li = document.createElement('li');
+                li.innerText = `${p.name} (${p.team})`;
+                if (id === this.localPlayerId) li.innerText += " (You)";
+                listDOM.appendChild(li);
             }
         }
 
@@ -204,10 +255,11 @@ class Game {
                     document.getElementById('startMatchBtn').disabled = false;
                 } else {
                      document.getElementById('waitingMessage').innerText = "Waiting for Host to start...";
+                     this.stadiumPanel.style.display = 'none';
                 }
             } else {
                  document.getElementById('waitingMessage').innerText = "Waiting for more players...";
-                 if (this.isHost) this.stadiumPanel.style.display = 'none';
+                 this.stadiumPanel.style.display = 'none';
             }
         }
     }
