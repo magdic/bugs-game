@@ -1,8 +1,6 @@
 {
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",
-    "jsdom": "^29.1.1",
-    "pixi.js": "^8.18.1",
     "vite": "^8.0.14"
   },
   "scripts": {
