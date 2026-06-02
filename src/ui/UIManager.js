@@ -20,6 +20,15 @@ export class UIManager {
     this.timerEl = document.getElementById('timer');
     this.themeToggleBtn = document.getElementById('theme-toggle');
 
+    if (this.screens.home) {
+        const logo = document.createElement('img');
+        logo.src = '/assets/images/logo.png';
+        logo.alt = 'Game Logo';
+        logo.style.maxWidth = '250px';
+        logo.style.marginBottom = '10px';
+        this.screens.home.insertBefore(logo, this.screens.home.firstChild);
+    }
+
     this.bindGlobalEvents();
   }
 
@@ -103,20 +112,35 @@ export class UIManager {
     } else {
         this.deskEditor.clear();
     }
+    this.updateItemsCounter(0);
+
+    // Re-calculate mouse pointer offsets for Fabric.js when screen becomes visible
+    setTimeout(() => this.deskEditor.recalcOffset(), 100);
   }
 
   populateAssetsList(dataManager) {
       const desksList = document.getElementById('desks-list');
       const itemsList = document.getElementById('items-list');
+      const repDesksList = document.getElementById('replicating-desks-list');
+      const repItemsList = document.getElementById('replicating-items-list');
 
       desksList.innerHTML = '';
       itemsList.innerHTML = '';
+      if (repDesksList) repDesksList.innerHTML = '';
+      if (repItemsList) repItemsList.innerHTML = '';
 
       dataManager.desks.forEach(desk => {
           const img = document.createElement('img');
           img.src = desk.url;
           img.onclick = () => this.deskEditor.setDesk(desk.id);
           desksList.appendChild(img);
+          
+          if (repDesksList) {
+              const repImg = document.createElement('img');
+              repImg.src = desk.url;
+              repImg.onclick = () => this.deskEditor.setDesk(desk.id);
+              repDesksList.appendChild(repImg);
+          }
       });
 
       dataManager.items.forEach(item => {
@@ -124,6 +148,13 @@ export class UIManager {
           img.src = item.url;
           img.onclick = () => this.deskEditor.addItem(item.id);
           itemsList.appendChild(img);
+
+          if (repItemsList) {
+              const repImg = document.createElement('img');
+              repImg.src = item.url;
+              repImg.onclick = () => this.deskEditor.addItem(item.id);
+              repItemsList.appendChild(repImg);
+          }
       });
   }
 
@@ -132,6 +163,23 @@ export class UIManager {
           state: this.deskEditor.getState(),
           screenshot: this.deskEditor.getScreenshot()
       };
+  }
+
+  bindEditorEvents({ onSaveDesk, onSaveReplica }) {
+      const btnSaveDesk = document.getElementById('btn-save-desk');
+      const btnSaveReplica = document.getElementById('btn-save-replica');
+      
+      if (btnSaveDesk) btnSaveDesk.onclick = onSaveDesk;
+      if (btnSaveReplica) btnSaveReplica.onclick = onSaveReplica;
+  }
+
+  updateItemsCounter(currentCount) {
+      const remaining = Math.max(0, 7 - currentCount);
+      const itemsRem = document.getElementById('items-remaining');
+      const repItemsRem = document.getElementById('replicating-items-remaining');
+      
+      if (itemsRem) itemsRem.textContent = remaining;
+      if (repItemsRem) repItemsRem.textContent = remaining;
   }
 
   showGuessing(imageUrl, players, onGuess) {
@@ -159,8 +207,16 @@ export class UIManager {
 
       // We reuse the same canvas element, just clear it and append to the replicating screen
       const canvasContainer = document.getElementById('replicating-canvas-container');
-      canvasContainer.appendChild(this.deskEditor.canvas);
+      
+      // Fabric JS wraps the canvas in a .canvas-container div, so we must append the wrapper if it exists
+      const canvasElement = this.deskEditor.canvas.wrapperEl || (this.deskEditor.canvas.getElement ? this.deskEditor.canvas.getElement() : this.deskEditor.canvas);
+      canvasContainer.insertBefore(canvasElement, document.getElementById('btn-save-replica'));
+      
       this.deskEditor.clear();
+      this.updateItemsCounter(0);
+
+      // Re-calculate mouse pointer offsets after canvas wrapper is moved in the DOM
+      setTimeout(() => this.deskEditor.recalcOffset(), 100);
   }
 
   showResults(players) {
@@ -169,14 +225,42 @@ export class UIManager {
       list.innerHTML = '';
 
       // Sort by score
-      const sorted = [...players].sort((a,b) => b.score - a.score);
+      const sorted = [...players].sort((a,b) => (b.score || 0) - (a.score || 0));
 
       sorted.forEach(p => {
           const li = document.createElement('li');
-          li.innerHTML = `<i data-lucide="${p.avatar}"></i> ${p.name}: ${p.score} pts`;
+          li.innerHTML = `<i data-lucide="${p.avatar}"></i> ${p.name}: ${p.score || 0} pts`;
           list.appendChild(li);
       });
       createIcons({ icons });
+  }
+
+  updateGameStats(currentRound, maxRounds, players) {
+      const statsEl = document.getElementById('game-stats');
+      if (!statsEl) return;
+      statsEl.style.display = 'flex';
+
+      const roundEl = document.getElementById('round-display');
+      if (roundEl) {
+          roundEl.textContent = `Round: ${currentRound} / ${maxRounds}`;
+      }
+
+      const boardEl = document.getElementById('mini-leaderboard');
+      if (boardEl) {
+          boardEl.innerHTML = '';
+          const sorted = [...players].sort((a,b) => (b.score || 0) - (a.score || 0));
+          sorted.forEach(p => {
+              const div = document.createElement('div');
+              div.textContent = `${p.name}: ${p.score || 0} pts`;
+              div.style.color = p.color || 'var(--text-color)';
+              boardEl.appendChild(div);
+          });
+      }
+  }
+
+  hideGameStats() {
+      const statsEl = document.getElementById('game-stats');
+      if (statsEl) statsEl.style.display = 'none';
   }
 
   startTimer(seconds, onComplete) {
@@ -196,5 +280,10 @@ export class UIManager {
 
       tick();
       this.timerInterval = setInterval(tick, 1000);
+  }
+
+  stopTimer() {
+      clearInterval(this.timerInterval);
+      this.timerEl.style.display = 'none';
   }
 }

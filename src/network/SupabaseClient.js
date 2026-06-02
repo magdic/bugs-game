@@ -79,12 +79,12 @@ export class SupabaseManager {
   async uploadScreenshot(playerId, dataUrl) {
     const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
     const buffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-    const fileName = `${playerId}-${Date.now()}.png`;
+    const fileName = `${playerId}-${Date.now()}.jpg`;
 
     const { data, error } = await supabase.storage
       .from('screenshots')
       .upload(fileName, buffer, {
-        contentType: 'image/png',
+        contentType: 'image/jpeg',
         upsert: true
       });
 

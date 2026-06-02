@@ -1,212 +1,236 @@
 export class DeskEditor {
   constructor(canvasElement, dataManager) {
-    this.canvas = canvasElement;
-    this.ctx = this.canvas.getContext('2d');
+    this.canvasElement = canvasElement;
     this.dataManager = dataManager;
 
     this.width = 800;
     this.height = 600;
-    this.canvas.width = this.width;
-    this.canvas.height = this.height;
+
+    // Initialize Fabric.js Canvas
+    this.canvas = new fabric.Canvas(canvasElement, {
+      width: this.width,
+      height: this.height,
+      backgroundColor: '#fff',
+      preserveObjectStacking: true
+    });
 
     this.deskId = null;
-    this.placedItems = []; // { id, x, y, image }
     this.maxItems = 7;
 
-    this.isDragging = false;
-    this.draggedItemIndex = -1;
-    this.offsetX = 0;
-    this.offsetY = 0;
-
     this.bindEvents();
-    this.render();
   }
 
   setDesk(deskId) {
     this.deskId = deskId;
-    this.render();
+    const deskData = this.dataManager.getDesk(deskId);
+
+    if (deskData && deskData.image) {
+      const imgInstance = new fabric.Image(deskData.image);
+
+      // Calculate scale to cover canvas
+      const imgRatio = imgInstance.width / imgInstance.height;
+      const canvasRatio = this.width / this.height;
+      let scale;
+
+      if (imgRatio > canvasRatio) {
+         scale = this.height / imgInstance.height;
+      } else {
+         scale = this.width / imgInstance.width;
+      }
+
+      this.canvas.setBackgroundImage(imgInstance, this.canvas.renderAll.bind(this.canvas), {
+         scaleX: scale,
+         scaleY: scale,
+         originX: 'center',
+         originY: 'center',
+         left: this.width / 2,
+         top: this.height / 2
+      });
+    }
   }
 
   addItem(itemId) {
-    if (this.placedItems.length >= this.maxItems) return false;
+    const currentItemCount = this.canvas.getObjects('image').length;
+    if (currentItemCount >= this.maxItems) {
+        alert("Maximum 7 items allowed!");
+        return false;
+    }
 
     const itemData = this.dataManager.getItem(itemId);
     if (!itemData || !itemData.image) return false;
 
-    // Place in center initially
-    this.placedItems.push({
-      id: itemId,
-      x: this.width / 2 - itemData.image.width / 2,
-      y: this.height / 2 - itemData.image.height / 2,
-      image: itemData.image
+    const imgInstance = new fabric.Image(itemData.image);
+
+    // Initial scale to make it roughly 65x65 pixels
+    const targetSize = 65;
+    const scale = targetSize / Math.max(imgInstance.width, imgInstance.height);
+
+    imgInstance.set({
+        id: itemId, // Store the custom ID
+        left: this.width / 2,
+        top: this.height / 2,
+        scaleX: scale,
+        scaleY: scale,
+        originX: 'center',
+        originY: 'center',
+        transparentCorners: false,
+        cornerColor: '#ff5722',
+        borderColor: '#333',
+        cornerSize: 10,
+        minScaleLimit: 0.1 // Allows them to shrink it a bit more
     });
 
-    this.render();
+    // Disable stretching controls so it maintains aspect ratio
+    imgInstance.setControlsVisibility({
+        mt: false,
+        mb: false,
+        ml: false,
+        mr: false
+    });
+
+    this.canvas.add(imgInstance);
+    this.canvas.setActiveObject(imgInstance);
+    this.updateCounter();
+
     return true;
   }
 
-  removeItem(index) {
-    if (index >= 0 && index < this.placedItems.length) {
-      this.placedItems.splice(index, 1);
-      this.render();
-    }
+  removeItem() {
+     const activeObjects = this.canvas.getActiveObjects();
+     if (activeObjects.length) {
+         activeObjects.forEach(obj => this.canvas.remove(obj));
+         this.canvas.discardActiveObject();
+         this.updateCounter();
+     }
+  }
+
+  updateCounter() {
+    const currentCount = this.canvas.getObjects('image').length;
+    const remaining = Math.max(0, this.maxItems - currentCount);
+    const itemsRem = document.getElementById('items-remaining');
+    const repItemsRem = document.getElementById('replicating-items-remaining');
+    
+    if (itemsRem) itemsRem.textContent = remaining;
+    if (repItemsRem) repItemsRem.textContent = remaining;
   }
 
   bindEvents() {
-    this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
-    this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
-    this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
-    this.canvas.addEventListener('mouseleave', this.onMouseUp.bind(this));
-
-    // Support for touch devices
-    this.canvas.addEventListener('touchstart', (e) => {
-        const touch = e.touches[0];
-        const mouseEvent = new MouseEvent('mousedown', {
-            clientX: touch.clientX,
-            clientY: touch.clientY
-        });
-        this.onMouseDown(mouseEvent);
-        e.preventDefault();
-    }, {passive: false});
-
-    this.canvas.addEventListener('touchmove', (e) => {
-        const touch = e.touches[0];
-        const mouseEvent = new MouseEvent('mousemove', {
-            clientX: touch.clientX,
-            clientY: touch.clientY
-        });
-        this.onMouseMove(mouseEvent);
-        e.preventDefault();
-    }, {passive: false});
-
-    this.canvas.addEventListener('touchend', (e) => {
-        const mouseEvent = new MouseEvent('mouseup', {});
-        this.onMouseUp(mouseEvent);
-        e.preventDefault();
-    }, {passive: false});
-  }
-
-  getMousePos(e) {
-    const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
-    return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY
-    };
-  }
-
-  onMouseDown(e) {
-    const pos = this.getMousePos(e);
-
-    // Check backwards to select top-most item
-    for (let i = this.placedItems.length - 1; i >= 0; i--) {
-      const item = this.placedItems[i];
-      if (pos.x >= item.x && pos.x <= item.x + item.image.width &&
-          pos.y >= item.y && pos.y <= item.y + item.image.height) {
-
-        this.isDragging = true;
-        this.draggedItemIndex = i;
-        this.offsetX = pos.x - item.x;
-        this.offsetY = pos.y - item.y;
-
-        // Move item to end of array so it renders on top
-        const draggedItem = this.placedItems.splice(i, 1)[0];
-        this.placedItems.push(draggedItem);
-        this.draggedItemIndex = this.placedItems.length - 1;
-
-        break;
-      }
-    }
-  }
-
-  onMouseMove(e) {
-    if (this.isDragging && this.draggedItemIndex !== -1) {
-      const pos = this.getMousePos(e);
-      const item = this.placedItems[this.draggedItemIndex];
-      item.x = pos.x - this.offsetX;
-      item.y = pos.y - this.offsetY;
-      this.render();
-    }
-  }
-
-  onMouseUp(e) {
-    this.isDragging = false;
-    this.draggedItemIndex = -1;
-  }
-
-  render() {
-    this.ctx.clearRect(0, 0, this.width, this.height);
-
-    // Fill background
-    this.ctx.fillStyle = '#222';
-    this.ctx.fillRect(0, 0, this.width, this.height);
-
-    // Draw desk
-    if (this.deskId) {
-      const deskData = this.dataManager.getDesk(this.deskId);
-      if (deskData && deskData.image) {
-        // Draw centered and cover
-        const imgRatio = deskData.image.width / deskData.image.height;
-        const canvasRatio = this.width / this.height;
-        let dw, dh, dx, dy;
-
-        if (imgRatio > canvasRatio) {
-           dh = this.height;
-           dw = dh * imgRatio;
-           dy = 0;
-           dx = (this.width - dw) / 2;
-        } else {
-           dw = this.width;
-           dh = dw / imgRatio;
-           dx = 0;
-           dy = (this.height - dh) / 2;
+    // Listen for keyboard delete/backspace to remove items
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+            // Ensure the user isn't typing in an input field somewhere
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                this.removeItem();
+            }
         }
-
-        this.ctx.drawImage(deskData.image, dx, dy, dw, dh);
-      }
-    }
-
-    // Draw items
-    this.placedItems.forEach(item => {
-      if (item.image) {
-        this.ctx.drawImage(item.image, item.x, item.y);
-      }
     });
+
+    // Double-click to remove an item
+    this.canvas.on('mouse:dblclick', (e) => {
+        if (e.target && e.target.id) {
+            this.canvas.remove(e.target);
+            this.canvas.discardActiveObject();
+            this.updateCounter();
+        }
+    });
+
+    // Add a visual remove button that appears when an item is selected
+    this.removeBtn = document.createElement('button');
+    this.removeBtn.innerHTML = '🗑️ Remove';
+    this.removeBtn.style.position = 'absolute';
+    this.removeBtn.style.top = '10px';
+    this.removeBtn.style.right = '10px';
+    this.removeBtn.style.display = 'none';
+    this.removeBtn.style.backgroundColor = '#ef4444'; // Red color
+    this.removeBtn.style.color = '#fff';
+    this.removeBtn.style.padding = '8px 16px';
+    this.removeBtn.style.borderRadius = '8px';
+    this.removeBtn.style.border = 'none';
+    this.removeBtn.style.cursor = 'pointer';
+    this.removeBtn.style.zIndex = '100';
+    this.removeBtn.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+    this.removeBtn.style.fontWeight = 'bold';
+    
+    const container = this.canvas.wrapperEl || this.canvasElement.parentNode;
+    if (container) container.appendChild(this.removeBtn);
+
+    const handleRemove = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.removeItem();
+    };
+    this.removeBtn.addEventListener('mousedown', handleRemove);
+    this.removeBtn.addEventListener('touchstart', handleRemove);
+
+    this.canvas.on('selection:created', () => this.removeBtn.style.display = 'block');
+    this.canvas.on('selection:updated', () => this.removeBtn.style.display = 'block');
+    this.canvas.on('selection:cleared', () => this.removeBtn.style.display = 'none');
   }
 
   getScreenshot() {
-    return this.canvas.toDataURL('image/png');
+    return this.canvas.toDataURL({
+        format: 'jpeg',
+        quality: 0.7
+    });
   }
 
   getState() {
     return {
       deskId: this.deskId,
-      items: this.placedItems.map(item => ({
-        id: item.id,
-        x: item.x,
-        y: item.y
+      items: this.canvas.getObjects('image').map(obj => ({
+        id: obj.id,
+        x: obj.left,
+        y: obj.top,
+        scaleX: obj.scaleX,
+        scaleY: obj.scaleY,
+        angle: obj.angle
       }))
     };
   }
 
   setState(state) {
-    this.deskId = state.deskId;
-    this.placedItems = state.items.map(iState => {
+    this.clear();
+    this.setDesk(state.deskId);
+    
+    state.items.forEach(iState => {
       const itemData = this.dataManager.getItem(iState.id);
-      return {
-        id: iState.id,
-        x: iState.x,
-        y: iState.y,
-        image: itemData ? itemData.image : null
-      };
-    }).filter(i => i.image !== null);
-    this.render();
+      if (itemData && itemData.image) {
+          const imgInstance = new fabric.Image(itemData.image);
+          imgInstance.set({
+              id: iState.id,
+              left: iState.x,
+              top: iState.y,
+              scaleX: iState.scaleX,
+              scaleY: iState.scaleY,
+              angle: iState.angle || 0,
+              originX: 'center',
+              originY: 'center',
+              transparentCorners: false,
+              cornerColor: '#ff5722',
+              borderColor: '#333',
+              cornerSize: 10,
+              minScaleLimit: 0.2
+          });
+          imgInstance.setControlsVisibility({ mt: false, mb: false, ml: false, mr: false });
+          this.canvas.add(imgInstance);
+      }
+    });
+    
+    this.updateCounter();
   }
 
   clear() {
       this.deskId = null;
-      this.placedItems = [];
-      this.render();
+      this.canvas.clear();
+      this.canvas.backgroundColor = '#fff';
+      if (this.removeBtn) this.removeBtn.style.display = 'none';
+      this.updateCounter();
+  }
+
+  recalcOffset() {
+      if (this.canvas) {
+          this.canvas.calcOffset();
+          this.canvas.renderAll();
+      }
   }
 }

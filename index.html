@@ -3,17 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Great Bugs Heist</title>
+    <title>My Dream Desk Game</title>
     <link rel="stylesheet" href="/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 </head>
 <body>
     <button id="theme-toggle" class="icon-btn"><i data-lucide="moon"></i></button>
     <div id="timer" class="timer" style="display: none;"></div>
 
+    <!-- Leaderboard & Rounds -->
+    <div id="game-stats" class="game-stats" style="display: none;">
+        <div class="stat-box">
+            <strong id="round-display">Round: 1 / 1</strong>
+        </div>
+        <div class="stat-box">
+            <strong>Leaderboard</strong>
+            <div id="mini-leaderboard"></div>
+        </div>
+    </div>
+
     <div id="app">
         <!-- Screen: Home -->
         <div id="screen-home" class="screen">
-            <h1>The Great Bugs Heist</h1>
+            <h1>My Dream Desk</h1>
             <div class="card">
                 <input type="text" id="input-name" placeholder="Enter your name">
                 <div class="flex-row">
@@ -49,11 +61,12 @@
                 <div class="assets-panel">
                     <h3>Desks</h3>
                     <div id="desks-list" class="assets-list"></div>
-                    <h3>Items (Max 7)</h3>
+                <h3>Items (<span id="items-remaining">7</span> remaining)</h3>
                     <div id="items-list" class="assets-list"></div>
                 </div>
                 <div class="canvas-panel">
                     <canvas id="desk-canvas"></canvas>
+                    <button id="btn-save-desk" style="margin-top: 15px; width: 100%;">Save Desk</button>
                 </div>
             </div>
         </div>
@@ -72,10 +85,13 @@
             <h2 id="replicating-target"></h2>
             <div class="editor-container">
                 <div class="assets-panel">
-                    <!-- Assets will be duplicated or we can use the same panel structure by just moving the canvas. For simplicity, we just use the same logic and the items should be globally available or we just let UIManager handle it. -->
+                    <h3>Desks</h3>
+                    <div id="replicating-desks-list" class="assets-list"></div>
+                    <h3>Items (<span id="replicating-items-remaining">7</span> remaining)</h3>
+                    <div id="replicating-items-list" class="assets-list"></div>
                 </div>
                 <div class="canvas-panel" id="replicating-canvas-container">
-                    <!-- Canvas moves here -->
+                    <button id="btn-save-replica" style="margin-top: 15px; width: 100%;">Save Replica</button>
                 </div>
             </div>
         </div>
