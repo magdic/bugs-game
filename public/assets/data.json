@@ -3,204 +3,204 @@
     {
       "id": "desk_1",
       "name": "desk1.jpg",
-      "url": "/assets/images/desk/desk1.jpg"
+      "url": "./assets/images/desk/desk1.jpg"
     },
     {
       "id": "desk_2",
       "name": "desk10.jpg",
-      "url": "/assets/images/desk/desk10.jpg"
+      "url": "./assets/images/desk/desk10.jpg"
     },
     {
       "id": "desk_3",
       "name": "desk2.jpg",
-      "url": "/assets/images/desk/desk2.jpg"
+      "url": "./assets/images/desk/desk2.jpg"
     },
     {
       "id": "desk_4",
       "name": "desk3.jpg",
-      "url": "/assets/images/desk/desk3.jpg"
+      "url": "./assets/images/desk/desk3.jpg"
     },
     {
       "id": "desk_5",
       "name": "desk4.jpg",
-      "url": "/assets/images/desk/desk4.jpg"
+      "url": "./assets/images/desk/desk4.jpg"
     },
     {
       "id": "desk_6",
       "name": "desk5.jpg",
-      "url": "/assets/images/desk/desk5.jpg"
+      "url": "./assets/images/desk/desk5.jpg"
     },
     {
       "id": "desk_7",
       "name": "desk6.jpg",
-      "url": "/assets/images/desk/desk6.jpg"
+      "url": "./assets/images/desk/desk6.jpg"
     },
     {
       "id": "desk_8",
       "name": "desk7.jpg",
-      "url": "/assets/images/desk/desk7.jpg"
+      "url": "./assets/images/desk/desk7.jpg"
     },
     {
       "id": "desk_9",
       "name": "desk8.jpg",
-      "url": "/assets/images/desk/desk8.jpg"
+      "url": "./assets/images/desk/desk8.jpg"
     },
     {
       "id": "desk_10",
       "name": "desk9.jpg",
-      "url": "/assets/images/desk/desk9.jpg"
+      "url": "./assets/images/desk/desk9.jpg"
     },
     {
       "id": "desk_11",
       "name": "desk9.jpg",
-      "url": "/assets/images/desk/desk9.jpg"
+      "url": "./assets/images/desk/desk9.jpg"
     },
     {
       "id": "desk_12",
       "name": "desk9.jpg",
-      "url": "/assets/images/desk/desk9.jpg"
+      "url": "./assets/images/desk/desk9.jpg"
     },
     {
       "id": "desk_13",
       "name": "desk9.jpg",
-      "url": "/assets/images/desk/desk9.jpg"
+      "url": "./assets/images/desk/desk9.jpg"
     },
     {
       "id": "desk_14",
       "name": "desk9.jpg",
-      "url": "/assets/images/desk/desk9.jpg"
+      "url": "./assets/images/desk/desk9.jpg"
     },
     {
       "id": "desk_15",
       "name": "desk9.jpg",
-      "url": "/assets/images/desk/desk9.jpg"
+      "url": "./assets/images/desk/desk9.jpg"
     },
     {
       "id": "desk_16",
       "name": "desk9.jpg",
-      "url": "/assets/images/desk/desk9.jpg"
+      "url": "./assets/images/desk/desk9.jpg"
     },
     {
       "id": "desk_17",
       "name": "desk9.jpg",
-      "url": "/assets/images/desk/desk9.jpg"
+      "url": "./assets/images/desk/desk9.jpg"
     }
   ],
   "items": [
     {
       "id": "item_1",
       "name": "item1.png",
-      "url": "/assets/images/accesories/item1.png"
+      "url": "./assets/images/accesories/item1.png"
     },
     {
       "id": "item_2",
       "name": "item10.png",
-      "url": "/assets/images/accesories/item10.png"
+      "url": "./assets/images/accesories/item10.png"
     },
     {
       "id": "item_3",
       "name": "item11.png",
-      "url": "/assets/images/accesories/item11.png"
+      "url": "./assets/images/accesories/item11.png"
     },
     {
       "id": "item_4",
       "name": "item12.png",
-      "url": "/assets/images/accesories/item12.png"
+      "url": "./assets/images/accesories/item12.png"
     },
     {
       "id": "item_5",
       "name": "item13.png",
-      "url": "/assets/images/accesories/item13.png"
+      "url": "./assets/images/accesories/item13.png"
     },
     {
       "id": "item_6",
       "name": "item14.png",
-      "url": "/assets/images/accesories/item14.png"
+      "url": "./assets/images/accesories/item14.png"
     },
     {
       "id": "item_7",
       "name": "item15.png",
-      "url": "/assets/images/accesories/item15.png"
+      "url": "./assets/images/accesories/item15.png"
     },
     {
       "id": "item_8",
       "name": "item16.png",
-      "url": "/assets/images/accesories/item16.png"
+      "url": "./assets/images/accesories/item16.png"
     },
     {
       "id": "item_9",
       "name": "item17.png",
-      "url": "/assets/images/accesories/item17.png"
+      "url": "./assets/images/accesories/item17.png"
     },
     {
       "id": "item_10",
       "name": "item18.png",
-      "url": "/assets/images/accesories/item18.png"
+      "url": "./assets/images/accesories/item18.png"
     },
     {
       "id": "item_11",
       "name": "item19.png",
-      "url": "/assets/images/accesories/item19.png"
+      "url": "./assets/images/accesories/item19.png"
     },
     {
       "id": "item_12",
       "name": "item2.png",
-      "url": "/assets/images/accesories/item2.png"
+      "url": "./assets/images/accesories/item2.png"
     },
     {
       "id": "item_13",
       "name": "item20.png",
-      "url": "/assets/images/accesories/item20.png"
+      "url": "./assets/images/accesories/item20.png"
     },
     {
       "id": "item_14",
       "name": "item21.png",
-      "url": "/assets/images/accesories/item21.png"
+      "url": "./assets/images/accesories/item21.png"
     },
     {
       "id": "item_15",
       "name": "item22.png",
-      "url": "/assets/images/accesories/item22.png"
+      "url": "./assets/images/accesories/item22.png"
     },
     {
       "id": "item_16",
       "name": "item23.png",
-      "url": "/assets/images/accesories/item23.png"
+      "url": "./assets/images/accesories/item23.png"
     },
     {
       "id": "item_17",
       "name": "item3.png",
-      "url": "/assets/images/accesories/item3.png"
+      "url": "./assets/images/accesories/item3.png"
     },
     {
       "id": "item_18",
       "name": "item4.png",
-      "url": "/assets/images/accesories/item4.png"
+      "url": "./assets/images/accesories/item4.png"
     },
     {
       "id": "item_19",
       "name": "item5.png",
-      "url": "/assets/images/accesories/item5.png"
+      "url": "./assets/images/accesories/item5.png"
     },
     {
       "id": "item_20",
       "name": "item6.png",
-      "url": "/assets/images/accesories/item6.png"
+      "url": "./assets/images/accesories/item6.png"
     },
     {
       "id": "item_21",
       "name": "item7.png",
-      "url": "/assets/images/accesories/item7.png"
+      "url": "./assets/images/accesories/item7.png"
     },
     {
       "id": "item_22",
       "name": "item8.png",
-      "url": "/assets/images/accesories/item8.png"
+      "url": "./assets/images/accesories/item8.png"
     },
     {
       "id": "item_23",
       "name": "item9.png",
-      "url": "/assets/images/accesories/item9.png"
+      "url": "./assets/images/accesories/item9.png"
     }
   ]
 }

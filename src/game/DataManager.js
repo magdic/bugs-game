@@ -8,7 +8,7 @@ export class DataManager {
 
   async loadData() {
     try {
-      const response = await fetch('/assets/data.json');
+      const response = await fetch('./assets/data.json');
       const data = await response.json();
 
       this.desks = data.desks;

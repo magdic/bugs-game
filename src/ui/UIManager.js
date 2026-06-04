@@ -22,7 +22,7 @@ export class UIManager {
 
     if (this.screens.home) {
         const logo = document.createElement('img');
-        logo.src = '/assets/images/logo.png';
+        logo.src = './assets/images/logo.png';
         logo.alt = 'Game Logo';
         logo.style.maxWidth = '250px';
         logo.style.marginBottom = '10px';
