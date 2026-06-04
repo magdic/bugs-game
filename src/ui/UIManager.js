@@ -1,5 +1,6 @@
 import { createIcons, icons } from 'https://esm.sh/lucide';
 import { DeskEditor } from '../game/DeskEditor.js';
+import confetti from 'https://esm.sh/canvas-confetti';
 
 export class UIManager {
   constructor() {
@@ -30,6 +31,30 @@ export class UIManager {
     }
 
     this.bindGlobalEvents();
+  }
+
+  // --- Audio Helpers ---
+  playTone(freq, type, duration, vol) {
+      try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, ctx.currentTime);
+          gain.gain.setValueAtTime(vol, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + duration);
+      } catch(e) { console.error("Audio failed", e); }
+  }
+  playCorrectSound() {
+      this.playTone(523.25, 'sine', 0.1, 0.1); // C5
+      setTimeout(() => this.playTone(659.25, 'sine', 0.2, 0.1), 100); // E5
+  }
+  playWrongSound() {
+      this.playTone(300, 'sawtooth', 0.3, 0.1);
   }
 
   bindGlobalEvents() {
@@ -223,9 +248,16 @@ export class UIManager {
               if (p.id === target.id) {
                   resultMsg.textContent = `Correct! It is ${target.name}'s desk!`;
                   resultMsg.style.color = '#4ade80';
+                  this.playCorrectSound();
+                  confetti({
+                      particleCount: 100,
+                      spread: 70,
+                      origin: { y: 0.6 }
+                  });
               } else {
                   resultMsg.textContent = `Wrong! It was ${target.name}'s desk.`;
                   resultMsg.style.color = '#ef4444';
+                  this.playWrongSound();
               }
 
               // Wait 2.5 seconds to let the player read the result before advancing
@@ -257,18 +289,46 @@ export class UIManager {
 
   showResults(players) {
       this.showScreen('results');
-      const list = document.getElementById('results-list');
-      list.innerHTML = '';
+      const gallery = document.getElementById('results-gallery');
+      gallery.innerHTML = '';
 
       // Sort by score
       const sorted = [...players].sort((a,b) => (b.score || 0) - (a.score || 0));
 
-      sorted.forEach(p => {
-          const li = document.createElement('li');
-          li.innerHTML = `<i data-lucide="${p.avatar}"></i> ${p.name}: ${p.score || 0} pts`;
-          list.appendChild(li);
+      sorted.forEach((p, index) => {
+          const card = document.createElement('div');
+          card.className = 'result-card';
+
+          // Format rank
+          const rank = index === 0 ? '🏆 1st Place' : `${index + 1}${index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'} Place`;
+
+          card.innerHTML = `
+              <h3>${rank}</h3>
+              <img src="${p.screenshot_url}" alt="${p.name}'s Desk">
+              <div style="font-size: 1.2rem; font-weight: bold; margin-top: 10px;">
+                  <i data-lucide="${p.avatar}"></i> ${p.name}
+              </div>
+              <div style="color: var(--primary); font-weight: bold; font-size: 1.1rem;">${p.score || 0} pts</div>
+          `;
+
+          // Add Download Button
+          const downloadBtn = document.createElement('button');
+          downloadBtn.className = 'download-btn';
+          downloadBtn.innerHTML = '<i data-lucide="download" style="width: 16px; height: 16px; vertical-align: middle;"></i> Download Desk';
+          downloadBtn.onclick = () => {
+              const a = document.createElement('a');
+              a.href = p.screenshot_url;
+              a.download = `${p.name.replace(/\s+/g, '-').toLowerCase()}-dream-desk.jpg`;
+              a.click();
+          };
+
+          card.appendChild(downloadBtn);
+          gallery.appendChild(card);
       });
       createIcons({ icons });
+
+      // Fire big confetti for the winner!
+      confetti({ particleCount: 150, spread: 100, origin: { y: 0.3 }, zIndex: 1000 });
   }
 
   updateGameStats(currentRound, maxRounds, players) {
