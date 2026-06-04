@@ -1,4 +1,4 @@
-import { createIcons, icons } from 'lucide';
+import { createIcons, icons } from 'https://esm.sh/lucide';
 import { DeskEditor } from '../game/DeskEditor.js';
 
 export class UIManager {
@@ -182,20 +182,56 @@ export class UIManager {
       if (repItemsRem) repItemsRem.textContent = remaining;
   }
 
-  showGuessing(imageUrl, players, onGuess) {
+  showGuessing(target, players, onGuess) {
       this.showScreen('guessing');
-      document.getElementById('guessing-image').src = imageUrl;
+      document.getElementById('guessing-image').src = target.screenshot_url;
 
       const list = document.getElementById('guessing-players-list');
       list.innerHTML = '';
 
+      let resultMsg = document.getElementById('guessing-result-msg');
+      if (!resultMsg) {
+          resultMsg = document.createElement('h3');
+          resultMsg.id = 'guessing-result-msg';
+          resultMsg.style.textAlign = 'center';
+          resultMsg.style.marginTop = '15px';
+          resultMsg.style.minHeight = '30px';
+          list.parentNode.appendChild(resultMsg);
+      }
+      resultMsg.textContent = '';
+
       players.forEach(p => {
           const btn = document.createElement('button');
           btn.textContent = p.name;
+          btn.dataset.playerId = p.id;
           btn.onclick = () => {
               // disable all buttons
               Array.from(list.children).forEach(c => c.disabled = true);
-              onGuess(p.id);
+
+              // Highlight correct and incorrect guesses
+              Array.from(list.children).forEach(c => {
+                  if (c.dataset.playerId === target.id) {
+                      c.style.backgroundColor = '#4ade80'; // Green for correct
+                      c.style.color = '#111827';
+                  } else if (c.dataset.playerId === p.id && p.id !== target.id) {
+                      c.style.backgroundColor = '#ef4444'; // Red for incorrect
+                  } else {
+                      c.style.opacity = '0.5'; // Dim others
+                  }
+              });
+
+              if (p.id === target.id) {
+                  resultMsg.textContent = `Correct! It is ${target.name}'s desk!`;
+                  resultMsg.style.color = '#4ade80';
+              } else {
+                  resultMsg.textContent = `Wrong! It was ${target.name}'s desk.`;
+                  resultMsg.style.color = '#ef4444';
+              }
+
+              // Wait 2.5 seconds to let the player read the result before advancing
+              setTimeout(() => {
+                  onGuess(p.id);
+              }, 2500);
           };
           list.appendChild(btn);
       });
