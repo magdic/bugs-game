@@ -214,7 +214,7 @@ export class GameManager {
      // Guarantee they never guess their own desk (unless playing completely solo)
      const target = otherPlayers.length > 0 ? otherPlayers[Math.floor(Math.random() * otherPlayers.length)] : this.players[0];
 
-     this.ui.showGuessing(target.screenshot_url, this.players, async (guessedId) => {
+     this.ui.showGuessing(target, this.players, async (guessedId) => {
          const me = this.players.find(p => p.id === this.supabase.playerId);
          let updates = { current_phase: `guessing_${this.currentRound}` };
          if (guessedId === target.id) {

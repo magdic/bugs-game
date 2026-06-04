@@ -136,7 +136,7 @@ export class GameManager {
      const otherPlayers = this.players.filter(p => p.id !== this.supabase.playerId);
      const target = otherPlayers[Math.floor(Math.random() * otherPlayers.length)] || this.players[0];
 
-     this.ui.showGuessing(target.screenshot_url, this.players, async (guessedId) => {
+     this.ui.showGuessing(target, this.players, async (guessedId) => {
          if (guessedId === target.id) {
              const me = this.players.find(p => p.id === this.supabase.playerId);
              await this.supabase.updatePlayerInfo(this.supabase.playerId, { score: me.score + 25 });
