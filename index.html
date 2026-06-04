@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dream Desk Game</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+</head>
+<body>
+    <button id="theme-toggle" class="icon-btn"><i data-lucide="moon"></i></button>
+    <div id="timer" class="timer" style="display: none;"></div>
+
+    <!-- Leaderboard & Rounds -->
+    <div id="game-stats" class="game-stats" style="display: none;">
+        <div class="stat-box">
+            <strong id="round-display">Round: 1 / 1</strong>
+        </div>
+        <div class="stat-box">
+            <strong>Leaderboard</strong>
+            <div id="mini-leaderboard"></div>
+        </div>
+    </div>
+
+    <div id="app">
+        <!-- Screen: Home -->
+        <div id="screen-home" class="screen">
+            <h1>My Dream Desk</h1>
+            <div class="card">
+                <input type="text" id="input-name" placeholder="Enter your name">
+                <div class="flex-row">
+                    <input type="color" id="input-color" value="#ff5722">
+                    <select id="select-avatar">
+                        <option value="user">User</option>
+                        <option value="bug">Bug</option>
+                        <option value="cat">Cat</option>
+                        <option value="dog">Dog</option>
+                        <option value="ghost">Ghost</option>
+                    </select>
+                </div>
+                <div class="flex-row">
+                    <button id="btn-create-room">Create Room</button>
+                    <button id="btn-join-room" class="secondary">Join Room</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen: Lobby -->
+        <div id="screen-lobby" class="screen" style="display: none;">
+            <h2>Room Code: <span id="room-code-display"></span></h2>
+            <div class="card">
+                <h3>Players</h3>
+                <ul id="lobby-players-list" class="player-list"></ul>
+                <button id="btn-start-game" style="display: none;">Start Game</button>
+            </div>
+        </div>
+
+        <!-- Screen: Decorating -->
+        <div id="screen-decorating" class="screen screen-wide" style="display: none;">
+            <div class="editor-container">
+                <div class="assets-panel">
+                    <h3>Desks</h3>
+                    <div id="desks-list" class="assets-list"></div>
+                <h3>Items (<span id="items-remaining">7</span> remaining)</h3>
+                    <div id="items-list" class="assets-list"></div>
+                </div>
+                <div class="canvas-panel">
+                    <canvas id="desk-canvas"></canvas>
+                    <button id="btn-save-desk" style="margin-top: 15px; width: 100%;">Save Desk</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen: Guessing -->
+        <div id="screen-guessing" class="screen" style="display: none;">
+            <h2>Whose desk is this?</h2>
+            <div class="card">
+                <img id="guessing-image" src="" alt="Guess the player" class="guess-img">
+                <div id="guessing-players-list" class="guess-buttons"></div>
+            </div>
+        </div>
+
+        <!-- Screen: Replicating -->
+        <div id="screen-replicating" class="screen screen-wide" style="display: none;">
+            <h2 id="replicating-target"></h2>
+            <div class="editor-container">
+                <div class="assets-panel">
+                    <h3>Desks</h3>
+                    <div id="replicating-desks-list" class="assets-list"></div>
+                    <h3>Items (<span id="replicating-items-remaining">7</span> remaining)</h3>
+                    <div id="replicating-items-list" class="assets-list"></div>
+                </div>
+                <div class="canvas-panel" id="replicating-canvas-container">
+                    <button id="btn-save-replica" style="margin-top: 15px; width: 100%;">Save Replica</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen: Results -->
+        <div id="screen-results" class="screen" style="display: none;">
+            <h2>Final Scores</h2>
+            <div class="card">
+                <ul id="results-list" class="player-list"></ul>
+                <button onclick="location.reload()">Play Again</button>
+            </div>
+        </div>
+
+        <!-- Screen: Waiting -->
+        <div id="screen-waiting" class="screen" style="display: none;">
+            <div class="card">
+                <h2 id="waiting-message">Waiting...</h2>
+                <div class="loader"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
