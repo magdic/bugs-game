@@ -8,11 +8,11 @@ export class DataManager {
 
   async loadData() {
     try {
-      const response = await fetch(`${import.meta.env.BASE_URL}assets/data.json`);
+      const response = await fetch('./assets/data.json');
       const data = await response.json();
 
-      // Securely prefix URLs with Vite's base path so it works everywhere
-      const fixUrl = (url) => import.meta.env.BASE_URL + url.replace(/^(\.\/|\/)/, '');
+      // Ensure URLs are relative so they work seamlessly in the native browser
+      const fixUrl = (url) => url.startsWith('./') ? url : './' + url.replace(/^\//, '');
       
       this.desks = data.desks.map(d => ({ ...d, url: fixUrl(d.url) }));
       this.items = data.items.map(i => ({ ...i, url: fixUrl(i.url) }));
