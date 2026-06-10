@@ -28,6 +28,31 @@ export class UIManager {
         logo.style.maxWidth = '250px';
         logo.style.marginBottom = '10px';
         this.screens.home.insertBefore(logo, this.screens.home.firstChild);
+
+        // Assign a random color on load
+        const colorInput = document.getElementById('input-color');
+        if (colorInput) {
+            colorInput.value = '#' + Math.floor(Math.random() * 16777216).toString(16).padStart(6, '0');
+        }
+
+        // Avatar Preview Logic
+        const avatarSelect = document.getElementById('select-avatar');
+        const avatarPreview = document.getElementById('avatar-preview');
+        
+        if (avatarSelect && avatarPreview) {
+            avatarSelect.addEventListener('change', (e) => {
+                avatarPreview.innerHTML = `<i data-lucide="${e.target.value}"></i>`;
+                createIcons({ icons });
+            });
+
+            if (colorInput) {
+                colorInput.addEventListener('input', (e) => {
+                    avatarPreview.style.color = e.target.value;
+                });
+                // Apply initial random color to the icon
+                avatarPreview.style.color = colorInput.value;
+            }
+        }
     }
 
     this.bindGlobalEvents();
