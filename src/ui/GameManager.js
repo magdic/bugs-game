@@ -139,7 +139,7 @@ export class GameManager {
      this.ui.showGuessing(target, this.players, async (guessedId) => {
          if (guessedId === target.id) {
              const me = this.players.find(p => p.id === this.supabase.playerId);
-             await this.supabase.updatePlayerInfo(this.supabase.playerId, { score: me.score + 25 });
+             await this.supabase.updatePlayerInfo(this.supabase.playerId, { score: (me?.score || 0) + 25 });
          }
          this.ui.showWaiting('Waiting for others to finish guessing...');
 
@@ -173,7 +173,7 @@ export class GameManager {
           });
 
           const me = this.players.find(p => p.id === this.supabase.playerId);
-          await this.supabase.updatePlayerInfo(this.supabase.playerId, { score: me.score + points });
+          await this.supabase.updatePlayerInfo(this.supabase.playerId, { score: (me?.score || 0) + points });
 
           if (me.is_host) {
               setTimeout(async () => {

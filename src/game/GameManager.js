@@ -286,7 +286,7 @@ export class GameManager {
          const me = this.players.find(p => p.id === this.supabase.playerId);
          let updates = { current_phase: `guessing_${this.currentRound}` };
          if (guessedId === target.id) {
-             updates.score = (me.score || 0) + 25;
+             updates.score = (me?.score || 0) + 25;
          }
          try {
              await this.supabase.updatePlayerInfo(this.supabase.playerId, updates);
@@ -348,7 +348,7 @@ export class GameManager {
 
           const me = this.players.find(p => p.id === this.supabase.playerId);
           let updates = {
-              score: (me.score || 0) + points,
+              score: (me?.score || 0) + points,
               current_phase: `replicating_${this.currentRound}`
           };
           
