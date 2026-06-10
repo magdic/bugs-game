@@ -47,6 +47,13 @@ export class UIManager {
         const avatarPreview = document.getElementById('avatar-preview');
         
         if (avatarSelect && avatarPreview) {
+            // Assign a random avatar on load
+            const options = avatarSelect.options;
+            if (options.length > 0) {
+                const randomIdx = Math.floor(Math.random() * options.length);
+                avatarSelect.selectedIndex = randomIdx;
+            }
+
             avatarSelect.addEventListener('change', (e) => {
                 avatarPreview.innerHTML = `<i data-lucide="${e.target.value}"></i>`;
                 createIcons({ icons });
@@ -59,6 +66,9 @@ export class UIManager {
                 // Apply initial random color to the icon
                 avatarPreview.style.color = colorInput.value;
             }
+            
+            // Apply initial random avatar to the preview
+            avatarPreview.innerHTML = `<i data-lucide="${avatarSelect.value}"></i>`;
         }
     }
 
