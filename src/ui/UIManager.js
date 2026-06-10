@@ -2,6 +2,13 @@ import { createIcons, icons } from 'https://esm.sh/lucide';
 import { DeskEditor } from '../game/DeskEditor.js';
 import confetti from 'https://esm.sh/canvas-confetti';
 
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>'"]/g, match => {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match];
+    });
+}
+
 export class UIManager {
   constructor() {
     this.screens = {
@@ -109,7 +116,7 @@ export class UIManager {
 
     const getPlayerInfo = () => {
         return {
-            name: document.getElementById('input-name').value || 'Player',
+            name: document.getElementById('input-name').value.trim() || 'Player',
             color: document.getElementById('input-color').value,
             avatar: document.getElementById('select-avatar').value
         };
@@ -137,7 +144,7 @@ export class UIManager {
     players.forEach(p => {
       const li = document.createElement('li');
       li.style.color = p.color;
-      li.innerHTML = `<i data-lucide="${p.avatar}"></i> ${p.name} ${p.is_host ? '(Host)' : ''}`;
+      li.innerHTML = `<i data-lucide="${escapeHTML(p.avatar)}"></i> ${escapeHTML(p.name)} ${p.is_host ? '(Host)' : ''}`;
       list.appendChild(li);
     });
     createIcons({ icons });
@@ -326,12 +333,13 @@ export class UIManager {
 
           // Format rank
           const rank = index === 0 ? '🏆 1st Place' : `${index + 1}${index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'} Place`;
+          const safeName = escapeHTML(p.name);
 
           card.innerHTML = `
               <h3>${rank}</h3>
-              <img src="${p.screenshot_url}" alt="${p.name}'s Desk">
+              <img src="${p.screenshot_url}" alt="${safeName}'s Desk">
               <div style="font-size: 1.2rem; font-weight: bold; margin-top: 10px;">
-                  <i data-lucide="${p.avatar}"></i> ${p.name}
+                  <i data-lucide="${escapeHTML(p.avatar)}"></i> ${safeName}
               </div>
               <div style="color: var(--primary); font-weight: bold; font-size: 1.1rem;">${p.score || 0} pts</div>
           `;
