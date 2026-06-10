@@ -9,6 +9,8 @@ export class GameManager {
     this.maxRounds = 4;
     this.isTransitioning = false;
     this.hostTimer = null;
+    this.activePlayerIds = new Set();
+    this.knownActivePlayers = new Set();
   }
 
   init() {
@@ -16,6 +18,11 @@ export class GameManager {
     this.ui.bindHomeEvents({
       onCreateRoom: this.handleCreateRoom.bind(this),
       onJoinRoom: this.handleJoinRoom.bind(this)
+    });
+
+    // Best-effort cleanup when the user closes the browser or tab
+    window.addEventListener('beforeunload', () => {
+        this.supabase.removePlayer();
     });
   }
 
@@ -64,6 +71,7 @@ export class GameManager {
   setupSubscriptions() {
     this.supabase.subscribeToRoom(this.room.id, this.handleRoomUpdate.bind(this));
     this.supabase.subscribeToPlayers(this.room.id, this.handlePlayersUpdate.bind(this));
+    this.supabase.subscribeToPresence(this.room.id, this.supabase.playerId, this.handlePresenceUpdate.bind(this));
 
     // Bind Lobby Start
     this.ui.bindLobbyEvents({
@@ -111,8 +119,68 @@ export class GameManager {
     this.updateStatsUI();
   }
 
+  async handlePresenceUpdate(activeIds) {
+      const currentActive = new Set(activeIds);
+      
+      // Track newly seen players so we don't accidentally boot a player who is still loading in
+      for (const id of activeIds) {
+          this.knownActivePlayers.add(id);
+      }
+
+      if (!this.players || this.players.length === 0) {
+          this.activePlayerIds = currentActive;
+          return;
+      }
+
+      const me = this.players.find(p => p.id === this.supabase.playerId);
+      const host = this.players.find(p => p.is_host);
+
+      // Presence-driven Host Migration
+      if (host && this.knownActivePlayers.has(host.id) && !currentActive.has(host.id)) {
+          const activePlayers = this.players.filter(p => currentActive.has(p.id)).sort((a, b) => a.id.localeCompare(b.id));
+          if (activePlayers.length > 0 && activePlayers[0].id === this.supabase.playerId) {
+              console.log("Host disconnected via Presence. Assuming host duties.");
+              await this.supabase.updatePlayerInfo(this.supabase.playerId, { is_host: true }).catch(console.error);
+              await this.supabase.removePlayerById(host.id);
+          }
+      }
+
+      // As Host, remove anyone who disconnected from the database
+      if (me?.is_host) {
+          for (const p of this.players) {
+              // If we HAVE seen them before, but they are NO LONGER active -> delete them
+              if (this.knownActivePlayers.has(p.id) && !currentActive.has(p.id) && p.id !== host?.id) {
+                  console.log(`Player ${p.name} disconnected. Removing from DB.`);
+                  await this.supabase.removePlayerById(p.id);
+              }
+          }
+      }
+      
+      this.activePlayerIds = currentActive;
+  }
+
   async handlePlayersUpdate() {
     this.players = await this.supabase.getPlayers(this.room.id);
+
+    // Host Migration: If the host left and was removed from the list, assign a new one
+    const hasHost = this.players.some(p => p.is_host);
+    if (!hasHost && this.players.length > 0) {
+        // Sort players to ensure all clients agree on who the new host should be
+        const sortedPlayers = [...this.players].sort((a, b) => a.id.localeCompare(b.id));
+        const newHost = sortedPlayers[0];
+        
+        if (newHost.id === this.supabase.playerId) {
+            console.log("Host left. Assuming host duties.");
+            await this.supabase.updatePlayerInfo(this.supabase.playerId, { is_host: true }).catch(console.error);
+            return; // Exit and wait for the next database update to officially become host
+        }
+    }
+
+    // Run presence cleanup if DB updated before presence had a chance to evaluate
+    if (this.activePlayerIds.size > 0) {
+        this.handlePresenceUpdate(Array.from(this.activePlayerIds));
+    }
+
     this.updateStatsUI();
     if (this.room.status === 'lobby') {
        const isHost = this.players.find(p => p.id === this.supabase.playerId)?.is_host;

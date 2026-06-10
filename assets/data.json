@@ -201,6 +201,41 @@
       "id": "item_23",
       "name": "item9.png",
       "url": "./assets/images/accesories/item9.png"
+    },
+    {
+      "id": "item_24",
+      "name": "item24.png",
+      "url": "./assets/images/accesories/item24.png"
+    },
+    {
+      "id": "item_25",
+      "name": "item25.png",
+      "url": "./assets/images/accesories/item25.png"
+    },
+    {
+      "id": "item_26",
+      "name": "item26.png",
+      "url": "./assets/images/accesories/item26.png"
+    },
+    {
+      "id": "item_27",
+      "name": "item27.png",
+      "url": "./assets/images/accesories/item27.png"
+    },
+    {
+      "id": "item_28",
+      "name": "item28.png",
+      "url": "./assets/images/accesories/item28.png"
+    },
+    {
+      "id": "item_29",
+      "name": "item29.png",
+      "url": "./assets/images/accesories/item29.png"
+    },
+    {
+      "id": "item_30",
+      "name": "item30.png",
+      "url": "./assets/images/accesories/item30.png"
     }
   ]
 }

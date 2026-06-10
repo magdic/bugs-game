@@ -10,6 +10,7 @@ export class SupabaseManager {
     this.playerId = null;
     this.roomSubscription = null;
     this.playersSubscription = null;
+    this.presenceSubscription = null;
     this.onRoomUpdate = null;
     this.onPlayersUpdate = null;
   }
@@ -76,6 +77,17 @@ export class SupabaseManager {
     if (error) throw error;
   }
 
+  async removePlayer() {
+    if (!this.playerId) return;
+    const { error } = await supabase.from('players').delete().eq('id', this.playerId);
+    if (error) console.error("Failed to remove player on exit:", error);
+  }
+
+  async removePlayerById(id) {
+    const { error } = await supabase.from('players').delete().eq('id', id);
+    if (error) console.error("Failed to remove player by ID:", error);
+  }
+
   async uploadScreenshot(playerId, dataUrl) {
     const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
     const buffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
@@ -117,5 +129,25 @@ export class SupabaseManager {
         if (this.onPlayersUpdate) this.onPlayersUpdate(payload);
       })
       .subscribe();
+  }
+
+  subscribeToPresence(roomId, playerId, onPresenceUpdate) {
+    if (this.presenceSubscription) supabase.removeChannel(this.presenceSubscription);
+    
+    this.presenceSubscription = supabase.channel(`presence:${roomId}`);
+    this.presenceSubscription
+      .on('presence', { event: 'sync' }, () => {
+        const state = this.presenceSubscription.presenceState();
+        const activeIds = [];
+        for (const key in state) {
+          state[key].forEach(p => { if (p.player_id) activeIds.push(p.player_id); });
+        }
+        if (onPresenceUpdate) onPresenceUpdate(activeIds);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await this.presenceSubscription.track({ player_id: playerId });
+        }
+      });
   }
 }
