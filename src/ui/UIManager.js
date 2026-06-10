@@ -125,8 +125,12 @@ export class UIManager {
     const joinBtn = document.getElementById('btn-join-room');
 
     const getPlayerInfo = () => {
+        let rawName = document.getElementById('input-name').value.trim();
+        // Strip out <, >, quotes, and 'javascript:' to prevent HTML and URI-based injections
+        let safeName = rawName.replace(/[<>"']/g, '').replace(/javascript:/gi, '').trim();
+        
         return {
-            name: document.getElementById('input-name').value.trim() || 'Player',
+            name: safeName || 'Player',
             color: document.getElementById('input-color').value,
             avatar: document.getElementById('select-avatar').value
         };
